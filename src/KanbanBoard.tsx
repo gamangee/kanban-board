@@ -1,29 +1,42 @@
 import React from 'react';
-import { DragDropContext, Droppable, DropResult } from 'react-beautiful-dnd';
 import { useRecoilState } from 'recoil';
-import styled from 'styled-components';
 import { toDoState } from './atoms';
+import { DragDropContext, DropResult } from 'react-beautiful-dnd';
 import Board from './components/Board';
-import DragabbleCard from './components/DragabbleCard';
+import styled from 'styled-components';
 
 export default function KanbanBoard() {
   const [toDos, setToDos] = useRecoilState(toDoState);
-  const onDragEnd = ({ draggableId, destination, source }: DropResult) => {
+
+  const onDragEnd = (info: DropResult) => {
+    const { destination, source } = info;
     if (!destination) return;
-    // setToDos((oldToDos) => {
-    //   const toDosCopy = [...oldToDos];
-    //   // 1) Delete item on source.index
-    //   console.log('Delete item on', source.index);
-    //   console.log(toDosCopy);
-    //   toDosCopy.splice(source.index, 1);
-    //   console.log('Deleted item');
-    //   console.log(toDosCopy);
-    //   // 2) Put back the item on the destination.index
-    //   console.log('Put back', draggableId, 'on ', destination.index);
-    //   toDosCopy.splice(destination?.index, 0, draggableId);
-    //   console.log(toDosCopy);
-    //   return toDosCopy;
-    // });
+    if (destination?.droppableId === source.droppableId) {
+      setToDos((allBoards) => {
+        const boardCopy = [...allBoards[source.droppableId]];
+        const taskObj = boardCopy[source.index];
+        boardCopy.splice(source.index, 1);
+        boardCopy.splice(destination?.index, 0, taskObj);
+        return {
+          ...allBoards,
+          [source.droppableId]: boardCopy,
+        };
+      });
+    }
+    if (destination.droppableId !== source.droppableId) {
+      setToDos((allBoards) => {
+        const sourceBoard = [...allBoards[source.droppableId]];
+        const taskObj = sourceBoard[source.index];
+        const destinationBoard = [...allBoards[destination.droppableId]];
+        sourceBoard.splice(source.index, 1);
+        destinationBoard.splice(destination?.index, 0, taskObj);
+        return {
+          ...allBoards,
+          [source.droppableId]: sourceBoard,
+          [destination.droppableId]: destinationBoard,
+        };
+      });
+    }
   };
 
   return (
@@ -41,17 +54,17 @@ export default function KanbanBoard() {
 
 const Wrapper = styled.div`
   display: flex;
-  max-width: 600px;
-  width: 100%;
-  margin: 0 auto;
   justify-content: center;
   align-items: center;
+  width: 100vw;
   height: 100vh;
+  margin: 0 auto;
 `;
 
 const Boards = styled.div`
-  display: grid;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
   width: 100%;
   gap: 10px;
-  grid-template-columns: repeat(3, 1fr);
 `;
